@@ -6,8 +6,15 @@
 ## importing the libraries
 
 from pyspark.sql import SparkSession
+from pyspark.ml import Pipeline
+from pyspark.ml.clustering import KMeans, KMeansModel
+from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.evaluation import ClusteringEvaluator
 import seaborn as sns
+import numpy as np
 import matplotlib.pyplot as plt
+
+
 import pandas as pd
 
 # creating the spark session
@@ -38,14 +45,47 @@ data.show(10)
 
 df_show = data.select('label').groupBy('label').count().orderBy(['count'], ascending=False).toDF("label", "count")
 
-
 # visualizing data using seaborn
 sns.set(style="white")
-sns.relplot(x="count", y="label" , size= "count",sizes=(40, 500), alpha=.5, palette="muted", data=df_show.toPandas())
+sns.relplot(x="count", y="label", size="count", sizes=(40, 500), alpha=.5, palette="muted", data=df_show.toPandas())
 plt.show()
 df_show.toPandas().hist(bins=[1000, 2000, 4000, 6000, 8000, 10000, 15000, 20000, 25000])
 plt.show()
 
+# As K means can be applied only on numeric data. at this moment we will remove them
+# Data
+df_num = data.drop("protocol_type", "service", "flag").cache()
+col = df_num.columns
+# FeatureVector
+assembler = VectorAssembler(inputCols=col[:-1], outputCol='featureVector')
+
+# model
+kmeans = KMeans(predictionCol="cluster",k=2, featuresCol='featureVector')
+
+# pipeline to process it
+pipeline = Pipeline(stages=[assembler, kmeans])
+pipModel = pipeline.fit(df_num)
+prediction = pipModel.transform(df_num)
+prediction.select("cluster", "label").groupBy("cluster", "label").count().orderBy("cluster", "label", ascending=True).show(25)
+
+## Coice of k
+cost = np.zeros(6)
+i = 0
+for k in range(20, 140, 20):
+    kmea = KMeans().setK(k).setSeed(1).setFeaturesCol("featureVector")
+    model = kmea.fit(prediction.sample(False,0.1, seed=42))
+    cost[i] = model.computeCost(prediction)
+    i+=1
+print(cost)
 
 
+## visualizing the value of k with cost
+fig, ax = plt.subplots(1,1)
+ax.plot(range(20,140, 20),cost,color='r')
+ax.set_xlabel('k')
+ax.set_ylabel('cost')
+plt.show()
+
+# print(prediction.columns)
+# print(prediction.show(10))
 spark.stop()
