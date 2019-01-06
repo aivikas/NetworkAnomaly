@@ -119,3 +119,43 @@ roid, where “near” is defined by the Euclidean distance.
 here we run algorithm over different values of k we got result as follows
 
 ![Values Of K](data/img/plt4.png)
+
+
+## Training model using choosen K And Getting result :
+
+
++-------+----------------+-------+
+|cluster|           label|  count|
++-------+----------------+-------+
+|      0|           back.|     14|
+|      0|buffer_overflow.|     28|
+|      0|      ftp_write.|      7|
+|      0|   guess_passwd.|     53|
+|      0|           imap.|     10|
+|      0|        ipsweep.|  12480|
+|      0|           land.|     21|
+|      0|     loadmodule.|      8|
+|      0|       multihop.|      3|
+|      0|        neptune.|1072017|
+|      0|           nmap.|   2316|
+|      0|         normal.| 883361|
+|      0|           perl.|      3|
+|      0|            phf.|      4|
+|      0|            pod.|    264|
+|      0|      portsweep.|   9519|
+|      0|        rootkit.|      9|
+|      0|          satan.|  15891|
+|      0|          smurf.|2807886|
+|      0|            spy.|      2|
+|      0|       teardrop.|    979|
+|      0|    warezclient.|    938|
+|      0|    warezmaster.|      4|
+|      1|      portsweep.|      1|
+|      2|      portsweep.|      1|
++-------+----------------+-------+
+only showing top 25 rows
+
+
+
+
+

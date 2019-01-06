@@ -9,6 +9,8 @@ from pyspark.sql import SparkSession
 from pyspark.ml import Pipeline
 from pyspark.ml.clustering import KMeans, KMeansModel
 from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.feature import StringIndexer
+from pyspark.ml.feature import OneHotEncoderEstimator
 from pyspark.ml.evaluation import ClusteringEvaluator
 import seaborn as sns
 import numpy as np
@@ -68,7 +70,7 @@ pipModel = pipeline.fit(df_num)
 prediction = pipModel.transform(df_num)
 prediction.select("cluster", "label").groupBy("cluster", "label").count().orderBy("cluster", "label", ascending=True).show(25)
 
-## Coice of k
+# ## Coice of k
 cost = np.zeros(6)
 i = 0
 for k in range(20, 140, 20):
@@ -86,6 +88,27 @@ ax.set_xlabel('k')
 ax.set_ylabel('cost')
 plt.show()
 
+#Training Model using K= 100:
+# passing parameter through pipeline
+paramMap = {kmeans.k: 100}
+pipeline = Pipeline(stages=[assembler, kmeans])
+pipModel = pipeline.fit(df_num, paramMap)
+prediction = pipModel.transform(df_num)
+prediction.select("cluster", "label").groupBy("cluster", "label").count().orderBy("cluster", "label", ascending=True).show(25)
+
+
+## converting catogerical variable into vectors
+def catToVec(inputCon):
+    indexer = StringIndexer(inputCol=inputCon, outputCol=inputCon+"_indexed")
+    encoder = OneHotEncoderEstimator(inputCols=inputCon+"_indexed", outputCols=inputCon+"_vec")
+    pipHot = Pipeline(stages=[indexer, encoder])
+    return (pipHot, inputCon+"_vec")
+
+res = catToVec(df_show.select("label"))
+
+
+
+print(res)
 # print(prediction.columns)
 # print(prediction.show(10))
 spark.stop()
