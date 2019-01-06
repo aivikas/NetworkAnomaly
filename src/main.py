@@ -11,13 +11,9 @@ from pyspark.ml.clustering import KMeans, KMeansModel
 from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.feature import StringIndexer
 from pyspark.ml.feature import OneHotEncoderEstimator
-from pyspark.ml.evaluation import ClusteringEvaluator
 import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
-
-
-import pandas as pd
 
 # creating the spark session
 spark = SparkSession.builder.appName("NetworkAnomaly").master('spark://namenode:7077').getOrCreate()
@@ -62,51 +58,51 @@ col = df_num.columns
 assembler = VectorAssembler(inputCols=col[:-1], outputCol='featureVector')
 
 # model
-kmeans = KMeans(predictionCol="cluster",k=2, featuresCol='featureVector')
+kmeans = KMeans(predictionCol="cluster", k=2, featuresCol='featureVector')
 
 # pipeline to process it
 pipeline = Pipeline(stages=[assembler, kmeans])
 pipModel = pipeline.fit(df_num)
 prediction = pipModel.transform(df_num)
-prediction.select("cluster", "label").groupBy("cluster", "label").count().orderBy("cluster", "label", ascending=True).show(25)
+prediction.select("cluster", "label").groupBy("cluster", "label").count().orderBy("cluster", "label",
+                                                                                  ascending=True).show(25)
 
 # ## Coice of k
 cost = np.zeros(6)
 i = 0
 for k in range(20, 140, 20):
     kmea = KMeans().setK(k).setSeed(1).setFeaturesCol("featureVector")
-    model = kmea.fit(prediction.sample(False,0.1, seed=42))
+    model = kmea.fit(prediction.sample(False, 0.1, seed=42))
     cost[i] = model.computeCost(prediction)
-    i+=1
+    i += 1
 print(cost)
 
-
 ## visualizing the value of k with cost
-fig, ax = plt.subplots(1,1)
-ax.plot(range(20,140, 20),cost,color='r')
+fig, ax = plt.subplots(1, 1)
+ax.plot(range(20, 140, 20), cost, color='r')
 ax.set_xlabel('k')
 ax.set_ylabel('cost')
 plt.show()
 
-#Training Model using K= 100:
+# Training Model using K= 100:
 # passing parameter through pipeline
 paramMap = {kmeans.k: 100}
 pipeline = Pipeline(stages=[assembler, kmeans])
 pipModel = pipeline.fit(df_num, paramMap)
 prediction = pipModel.transform(df_num)
-prediction.select("cluster", "label").groupBy("cluster", "label").count().orderBy("cluster", "label", ascending=True).show(25)
+prediction.select("cluster", "label").groupBy("cluster", "label").count().orderBy("cluster", "label",
+                                                                                  ascending=True).show(25)
 
 
 ## converting catogerical variable into vectors
 def catToVec(inputCon):
-    indexer = StringIndexer(inputCol=inputCon, outputCol=inputCon+"_indexed")
-    encoder = OneHotEncoderEstimator(inputCols=inputCon+"_indexed", outputCols=inputCon+"_vec")
+    indexer = StringIndexer(inputCol=inputCon, outputCol=inputCon + "_indexed")
+    encoder = OneHotEncoderEstimator(inputCols=inputCon + "_indexed", outputCols=inputCon + "_vec")
     pipHot = Pipeline(stages=[indexer, encoder])
-    return (pipHot, inputCon+"_vec")
+    return (pipHot, inputCon + "_vec")
+
 
 res = catToVec(df_show.select("label"))
-
-
 
 print(res)
 # print(prediction.columns)
